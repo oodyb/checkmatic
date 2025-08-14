@@ -15,7 +15,7 @@ const ValidationModal = ({ show, onClose, status, title, message, isLoading = fa
         }
     }, [show]);
 
-    // Handle ESC key and backdrop click - but only when not loading
+    // Handle ESC key and backdrop click, but only when not loading
     const handleClick = (event) => {
         if (event.target === dialogRef.current && !isLoading) {
             onClose();

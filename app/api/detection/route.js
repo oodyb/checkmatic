@@ -30,7 +30,7 @@ const MODELS = {
 const LLM_ENDPOINT =
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent';
 
-// === Utility: Safe Input & Delay ===
+// === Safe Input & Delay ===
 /**
  * Creates a promise that resolves after a specified time.
  * @param {number} ms - The delay in milliseconds.
@@ -65,7 +65,7 @@ async function safeFetchWithRetry(url, options, retries = 3) {
                 return await res.json();
             }
 
-            // Handle rate limiting (HTTP 429) with exponential backoff
+            // Handle rate limiting with exponential backoff
             if (res.status === 429 && attempt < retries - 1) {
                 const delay = Math.pow(2, attempt) * 1000;
                 console.warn(`[Rate Limit] Retrying in ${delay}ms...`);

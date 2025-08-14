@@ -41,14 +41,13 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
         }
 
-        // Basic email format validation
+        // Eemail format validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return NextResponse.json({ message: 'Invalid email format' }, { status: 400 });
         }
 
-        // 2. Robust Input Sanitization: Prevent email header and HTML injection
-        // Remove newline characters to prevent email header injection.
+        // Robust Input Sanitization: Prevent email header and HTML injection
         const sanitizedName = name.replace(/[\n\r]/g, '');
         const sanitizedEmail = email.replace(/[\n\r]/g, '');
 
@@ -77,7 +76,6 @@ export async function POST(request) {
         return NextResponse.json({ message: 'Email sent successfully' }, { status: 200 });
     } catch (error) {
         console.error('Failed to send email:', error);
-        // Return a generic error message to prevent information leakage
         return NextResponse.json({ message: 'Failed to send email' }, { status: 500 });
     }
 }

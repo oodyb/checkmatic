@@ -7,7 +7,7 @@ import DOMPurify from 'dompurify';
 
 import ValidationModal from "./modals/ValidationModal";
 
-// Helper function for basic URL validation
+// Helper function for URL validation
 const isValidUrl = (string) => {
     try {
         new URL(string);

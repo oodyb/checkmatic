@@ -12,8 +12,7 @@ const DOMPurify = createDOMPurify(window);
 
 // === Environment Variables ===
 const GEMINI_API_KEY = process.env.LLM_API_KEY;
-// Security: Use an environment variable for the internal API URL
-const INTERNAL_API_URL = process.env.INTERNAL_API_URL || 'http://localhost:3000/api/detection';
+const INTERNAL_API_URL = process.env.INTERNAL_API_URL || '/api/detection';
 
 if (!GEMINI_API_KEY) {
     throw new Error("Missing LLM_API_KEY in environment variables.");
@@ -37,7 +36,7 @@ function createErrorResponse(message, status) {
     );
 }
 
-// === Utility: Safe Fetch with Retry ===
+// === Safe Fetch with Retry ===
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function safeFetchWithRetry(url, options, retries = 3) {
@@ -119,7 +118,7 @@ function validateURL(url) {
         throw new Error('URL cannot be empty');
     }
 
-    // Basic format and protocol checks
+    // Format and protocol checks
     let parsedUrl;
     try {
         parsedUrl = new URL(trimmedUrl);
@@ -216,7 +215,7 @@ function validatePhoto(photoData) {
         throw new Error('Invalid photo size');
     }
 
-    // Validate file type against a whitelist (removed SVG for security)
+    // Validate file type against a whitelist
     const allowedTypes = [
         'image/jpeg',
         'image/jpg',
@@ -255,7 +254,7 @@ function validatePhoto(photoData) {
         throw new Error('Invalid photo data format - must be base64 encoded image');
     }
 
-    // Check for reasonable base64 length (shouldn't be tiny or malformed)
+    // Check for reasonable base64 length
     const base64Data = data.split('base64,')[1];
     if (!base64Data || base64Data.length < 100) {
         throw new Error('Invalid or corrupted photo data');
@@ -278,7 +277,7 @@ async function extract(url) {
         }
         const text = await response.text();
 
-        // Use Readability for a structured article, but fall back to cheerio
+        // Readability for a structured article, but fall back to cheerio
         const dom = new JSDOM(text, { url });
         const reader = new Readability(dom.window.document);
         const article = reader.parse();
@@ -310,7 +309,6 @@ async function callDetectionAPI(sanitizedContent) {
     ];
 
     try {
-        // Security & Best Practice: Use environment variable for internal API endpoint
         const response = await fetch(INTERNAL_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -470,7 +468,6 @@ export async function POST(request) {
             case 'photo':
                 return await handlePhotoMode(photo);
             default:
-                // This case is technically unreachable due to the check above, but it's good practice.
                 return createErrorResponse('Invalid mode. Must be one of: link, text, photo', 400);
         }
 
@@ -478,8 +475,6 @@ export async function POST(request) {
         console.error("API analysis error:", error);
 
         // Security: Return a generic error message for the client to prevent internal information leakage.
-        // The original error message is still logged on the server side for debugging.
-        // Only return specific messages for controlled validation errors.
         if (error.message && (error.message.includes('URL is required') ||
             error.message.includes('Invalid URL format') ||
             error.message.includes('URL too long') ||
