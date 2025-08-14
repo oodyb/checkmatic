@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import * as ipaddr from 'ipaddr.js';
 import createDOMPurify from 'dompurify';
 import * as cheerio from 'cheerio';
+import { detectContent } from '../detection/detection-logic.js';
 
 // Initialize DOMPurify for robust HTML sanitization
 const window = new JSDOM('').window;
@@ -308,31 +309,14 @@ async function callDetectionAPI(sanitizedContent) {
     ];
 
     try {
-        // Use Vercel's automatically set environment variable for internal calls
-        const INTERNAL_API_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/detection` : 'http://localhost:3000/api/detection';
-
-        const response = await fetch(INTERNAL_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: sanitizedContent,
-                labelGroup: labelGroup,
-            }),
-        });
-
-        if (!response.ok) {
-            // If the error page is not JSON, handle error gracefully
-            const errorText = await response.text();
-            console.error('Detection API Error:', errorText);
-            throw new Error(`Detection API failed with status ${response.status}: ${errorText.slice(0, 100)}`);
-        }
-
-        return await response.json();
+        // Call the detection logic directly instead of making HTTP request
+        return await detectContent(sanitizedContent, labelGroup);
     } catch (error) {
         console.error('Error during detection API call:', error);
         throw new Error(`Internal Server Error while analyzing content: ${error.message}`);
     }
 }
+
 
 /**
  * Handles image-to-text extraction using the Gemini LLM endpoint directly.
