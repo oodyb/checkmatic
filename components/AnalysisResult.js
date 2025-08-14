@@ -158,8 +158,8 @@ Quote: "${tertiary_classification.quote}"`
           <div className="mt-4">
             <div
               className={`p-4 rounded-xl text-sm border transition-all duration-300 ${llmPositive
-                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
-                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
                 }`}
             >
               <p className="leading-relaxed">{llmReason}</p>
@@ -215,8 +215,8 @@ Quote: "${tertiary_classification.quote}"`
 
         <div
           className={`overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${isExpanded
-              ? 'max-h-[800px] opacity-100 mt-4'
-              : 'max-h-0 opacity-0'
+            ? 'max-h-[800px] opacity-100 mt-4'
+            : 'max-h-0 opacity-0'
             }`}
         >
           <div className="px-4">{content}</div>
@@ -238,8 +238,8 @@ Quote: "${tertiary_classification.quote}"`
     return (
       <span
         className={`font-bold capitalize px-3 py-1 rounded-full text-sm transition-all duration-300 ${isAuthentic
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
           }`}
       >
         {primary_classification?.type?.replace('_', ' ')}
@@ -252,8 +252,8 @@ Quote: "${tertiary_classification.quote}"`
     return (
       <span
         className={`font-bold capitalize px-3 py-1 rounded-full text-sm transition-all duration-300 ${isSatire
-            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
-            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+          : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
           }`}
       >
         {secondary_classification?.type?.replace('_', ' ')}
@@ -264,8 +264,8 @@ Quote: "${tertiary_classification.quote}"`
   return (
     <div
       className={`w-full max-w-2xl mx-auto mt-8 dark:bg-indigo-900/20 transition-all duration-1000 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${animateIn
-          ? 'translate-y-0 opacity-100 scale-100'
-          : 'translate-y-12 opacity-0 scale-95'
+        ? 'translate-y-0 opacity-100 scale-100'
+        : 'translate-y-12 opacity-0 scale-95'
         }`}
     >
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden backdrop-blur-sm">
@@ -394,6 +394,10 @@ Quote: "${tertiary_classification.quote}"`
               </div>,
               'bias'
             )}
+        </div>
+        <div className="flex flex-col mt-1 mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p>CheckMatic can make mistakes</p>
+          <p>Use this analysis as a guide and verify the information</p>
         </div>
       </div>
     </div>

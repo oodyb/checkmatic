@@ -10,7 +10,7 @@ const DOMPurify = createDOMPurify(window);
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Simple in-memory rate limiter to prevent abuse
+// In-memory rate limiter to prevent abuse
 const rateLimit = new Map();
 const MAX_REQUESTS_PER_HOUR = 5;
 const WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -36,7 +36,7 @@ export async function POST(request) {
     try {
         const { name, email, message } = await request.json();
 
-        // 1. Input Validation: Check for required fields
+        // Check for required fields
         if (!name || !email || !message) {
             return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
         }
@@ -47,7 +47,7 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Invalid email format' }, { status: 400 });
         }
 
-        // Robust Input Sanitization: Prevent email header and HTML injection
+        // Prevent email header and HTML injection
         const sanitizedName = name.replace(/[\n\r]/g, '');
         const sanitizedEmail = email.replace(/[\n\r]/g, '');
 
@@ -59,7 +59,7 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Sanitized input cannot be empty' }, { status: 400 });
         }
 
-        // 3. Use an environment variable for the recipient email
+        // Use an environment variable for the recipient email
         const recipientEmail = process.env.RESEND_CONTACT_EMAIL;
         if (!recipientEmail) {
             console.error('RESEND_CONTACT_EMAIL is not set in environment variables.');

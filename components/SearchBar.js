@@ -60,11 +60,6 @@ export default function SearchBar({ setAnalysisData }) {
         }
     };
 
-    const clearAllData = () => {
-        setQueries({ link: "", text: "" });
-        setFile(null);
-    };
-
     const handleStop = () => {
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -267,7 +262,7 @@ export default function SearchBar({ setAnalysisData }) {
               transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
               ${focused
                                 ? "border-indigo-500 shadow-2xl shadow-indigo-500/20 scale-[1.005]"
-                                : "border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-600"
+                                : "border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xs hover:border-indigo-300 dark:hover:border-indigo-600"
                             }
             `}
                     >
@@ -317,7 +312,7 @@ export default function SearchBar({ setAnalysisData }) {
               transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
               ${focused
                                 ? "border-indigo-500 shadow-2xl shadow-indigo-500/20 scale-[1.003]"
-                                : "border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-600"
+                                : "border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xs hover:border-indigo-300 dark:hover:border-indigo-600"
                             }
             `}
                     >
@@ -353,13 +348,13 @@ export default function SearchBar({ setAnalysisData }) {
                 {mode === "photo" && (
                     <div
                         className={`
-              relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800
+              relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 hover:border-indigo-300 dark:hover:border-indigo-600
               border-2 border-dashed transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
               ${dragOver
                                 ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 scale-[1.02] shadow-lg"
                                 : file
                                     ? "border-green-400 bg-green-50 dark:bg-green-950/30 shadow-lg"
-                                    : "border-gray-300 dark:border-gray-600 hover:border-indigo-40 cursor-pointer hover:scale-[1.005] shadow-lg hover:shadow-xl"
+                                    : "border-gray-300 dark:border-gray-600 hover:border-indigo-40 cursor-pointer hover:scale-[1.005] shadow-lg hover:shadow-xs"
                             }
             `}
                         onClick={!file ? () => fileInputRef.current?.click() : undefined}
@@ -444,7 +439,7 @@ export default function SearchBar({ setAnalysisData }) {
             font-semibold text-lg transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
             ${isDisabled
                             ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed opacity-60"
-                            : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl hover:shadow-indigo-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                            : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xs hover:shadow-indigo-500/25 hover:scale-[1.02] active:scale-[0.98]"
                         }
           `}
                 >

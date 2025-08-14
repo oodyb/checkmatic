@@ -43,7 +43,7 @@ export default function Contact() {
     };
 
     return (
-        <div className="md:mt-24 max-w-4xl mx-auto px-6 flex flex-col justify-center bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+        <div className="md:mt-16 max-w-4xl mx-auto px-6 flex flex-col justify-center bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
             <div className="flex items-center justify-center space-x-2 mb-6">
                 <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-600">
                     Contact Us

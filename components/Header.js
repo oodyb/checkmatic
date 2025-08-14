@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaGithub } from "react-icons/fa";
+import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import {
     HiOutlineHome,
     HiOutlineInformationCircle,
@@ -17,9 +17,15 @@ const links = [
     { href: "/about", label: "About", icon: HiOutlineInformationCircle },
     { href: "/contact", label: "Contact", icon: HiOutlineMail },
     {
-        href: "https://github.com/oodyb",
+        href: "https://github.com/oodyb/checkmatic",
         label: "GitHub",
         icon: FaGithub,
+        external: true,
+    },
+    {
+        href: "https://www.linkedin.com/in/alwaleed-sarieh-daher/",
+        label: "LinkedIn",
+        icon: FaLinkedinIn,
         external: true,
     },
 ];
@@ -62,7 +68,7 @@ export default function Header() {
                         className="md:hidden ml-auto text-indigo-600 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none cursor-pointer"
                         onClick={toggleMenu}
                     >
-                            <HiMenu className="w-8 h-8 text-indigo-600 hover:text-indigo-400 backdrop-blur-xs rounded-xs" />
+                        <HiMenu className="w-8 h-8 text-indigo-600 hover:text-indigo-400 backdrop-blur-xs rounded-xs" />
                     </button>
                 </div>
             </header>
