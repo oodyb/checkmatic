@@ -301,16 +301,15 @@ async function extract(url) {
 }
 
 // --- SHARED FUNCTION TO CALL DETECTION API ---
-async function callDetectionAPI(sanitizedContent, request) {
+async function callDetectionAPI(sanitizedContent) {
     const labelGroup = [
         "authentic", "fabricated", "misinformation", "report", "opinion", "analysis", "advertisement", "sponsored",
         "blog", "press_release", "interview", "extreme", "emotional", "clickbait", "conspiracy", "scam",
     ];
 
     try {
-        const host = request.headers.get('host');
-        const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-        const INTERNAL_API_URL = `${protocol}://${host}/api/detection`;
+        // Use Vercel's automatically set environment variable for internal calls
+        const INTERNAL_API_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/detection` : 'http://localhost:3000/api/detection';
 
         const response = await fetch(INTERNAL_API_URL, {
             method: 'POST',
@@ -322,9 +321,10 @@ async function callDetectionAPI(sanitizedContent, request) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Detection API Error:', errorData);
-            throw new Error(`Detection API failed with status ${response.status}: ${errorData.error || 'Unknown error'}`);
+            // If the error page is not JSON, handle error gracefully
+            const errorText = await response.text();
+            console.error('Detection API Error:', errorText);
+            throw new Error(`Detection API failed with status ${response.status}: ${errorText.slice(0, 100)}`);
         }
 
         return await response.json();
@@ -335,7 +335,7 @@ async function callDetectionAPI(sanitizedContent, request) {
 }
 
 /**
- * NEW FUNCTION: Handles image-to-text extraction using the Gemini LLM endpoint directly.
+ * Handles image-to-text extraction using the Gemini LLM endpoint directly.
  */
 async function detectTextFromImage(imageData) {
     try {
@@ -376,7 +376,7 @@ async function detectTextFromImage(imageData) {
 /**
  * Handles 'link' mode by extracting, sanitizing, and analyzing content from a URL.
  */
-async function handleLinkMode(query, request) {
+async function handleLinkMode(query) {
     if (!query) {
         return createErrorResponse('URL is required for link mode', 400);
     }
@@ -396,14 +396,14 @@ async function handleLinkMode(query, request) {
         return createErrorResponse('Text content cannot be empty after sanitization', 400);
     }
 
-    const combinedResults = await callDetectionAPI(sanitizedContent, request);
+    const combinedResults = await callDetectionAPI(sanitizedContent);
     return NextResponse.json(combinedResults, { status: 200 });
 }
 
 /**
  * Handles 'text' mode by sanitizing and analyzing raw text content.
  */
-async function handleTextMode(content, request) {
+async function handleTextMode(content) {
     if (!content) {
         return createErrorResponse('Text content is required for text mode', 400);
     }
@@ -413,14 +413,14 @@ async function handleTextMode(content, request) {
         return createErrorResponse('Text content cannot be empty after sanitization', 400);
     }
 
-    const combinedResults = await callDetectionAPI(sanitizedContent, request);
+    const combinedResults = await callDetectionAPI(sanitizedContent);
     return NextResponse.json(combinedResults, { status: 200 });
 }
 
 /**
  * Handles 'photo' mode by validating the provided photo data, extracting text, and then analyzing it.
  */
-async function handlePhotoMode(photo, request) {
+async function handlePhotoMode(photo) {
     if (!photo) {
         return createErrorResponse('Photo is required for photo mode', 400);
     }
@@ -436,12 +436,11 @@ async function handlePhotoMode(photo, request) {
     }
     const sanitizedContent = sanitizeText(extractedText, true);
 
-    const combinedResults = await callDetectionAPI(sanitizedContent, request);
+    const combinedResults = await callDetectionAPI(sanitizedContent);
     return NextResponse.json(combinedResults, { status: 200 });
 }
 
 // --- MAIN API ROUTE HANDLER ---
-
 export async function POST(request) {
     try {
         let requestData;
@@ -464,11 +463,11 @@ export async function POST(request) {
 
         switch (mode) {
             case 'link':
-                return await handleLinkMode(query, request);
+                return await handleLinkMode(query);
             case 'text':
-                return await handleTextMode(content, request);
+                return await handleTextMode(content);
             case 'photo':
-                return await handlePhotoMode(photo, request);
+                return await handlePhotoMode(photo);
             default:
                 return createErrorResponse('Invalid mode. Must be one of: link, text, photo', 400);
         }
