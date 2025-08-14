@@ -1,0 +1,18 @@
+/* app/globals.css */
+@import "tailwindcss";
+
+:root {
+  --font-sans: var(--font-poppins), sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    background-color: #ffffff;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    background-color: #101828;
+  }
+}
