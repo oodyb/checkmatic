@@ -12,7 +12,6 @@ const DOMPurify = createDOMPurify(window);
 
 // === Environment Variables ===
 const GEMINI_API_KEY = process.env.LLM_API_KEY;
-const INTERNAL_API_URL = process.env.INTERNAL_API_URL || '/api/detection';
 
 if (!GEMINI_API_KEY) {
     throw new Error("Missing LLM_API_KEY in environment variables.");
@@ -178,7 +177,7 @@ function validateURL(url) {
             const ipv6String = addr.toString();
             // Check for other IPv6 special ranges
             if (ipv6String.startsWith('ff') || // Multicast
-                ipv6String.startsWith('fe80:') || // Link-local (redundant but explicit)
+                ipv6String.startsWith('fe80:') || // Link-local
                 ipv6String.startsWith('fc') || // Unique local
                 ipv6String.startsWith('fd')) { // Unique local
                 throw new Error('Access to private/local URLs is not allowed');
@@ -309,9 +308,13 @@ async function callDetectionAPI(sanitizedContent) {
     ];
 
     try {
-        const response = await fetch(INTERNAL_API_URL, {
+        const apiUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/detection` : 'http://localhost:3000/api/detection';
+
+        const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({
                 text: sanitizedContent,
                 labelGroup: labelGroup,
@@ -319,9 +322,7 @@ async function callDetectionAPI(sanitizedContent) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Detection API Error:', errorData);
-            throw new Error(`Detection API failed with status ${response.status}: ${errorData.error || 'Unknown error'}`);
+            throw new Error(`Detection API failed with status: ${response.status}`);
         }
 
         return await response.json();
