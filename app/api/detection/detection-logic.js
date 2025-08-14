@@ -2,22 +2,9 @@
 // === Environment Variables ===
 const HF_ACCESS_TOKEN = process.env.HF_ACCESS_TOKEN;
 const LLM_API_KEY = process.env.LLM_API_KEY;
-const SYNTHESIS_PROMPT = process.env.SYNTHESIS_PROMPT;
-
-// Debug logging
-console.log('Environment check:', {
-    hasHfToken: !!HF_ACCESS_TOKEN,
-    hasLlmKey: !!LLM_API_KEY,
-    hasPrompt: !!SYNTHESIS_PROMPT,
-    promptLength: SYNTHESIS_PROMPT?.length || 0
-});
 
 if (!HF_ACCESS_TOKEN || !LLM_API_KEY) {
     throw new Error("Missing HF_ACCESS_TOKEN or LLM_API_KEY in environment variables.");
-}
-
-if (!SYNTHESIS_PROMPT) {
-    throw new Error("Missing SYNTHESIS_PROMPT in environment variables.");
 }
 
 // === Model Configuration ===
@@ -121,132 +108,150 @@ async function detectPoliticalBias(text) {
 }
 
 async function synthesizeWithLLM(text, zeroShot, sarcasm, politicalBias, currentDate) {
+    const prompt = `
+You are "CheckMatic," a news analyst.
+Your task is to analyze the provided article text and model outputs to produce a comprehensive, structured analysis.
+
+## Instructions:
+1.  **The current date is: ${currentDate}**
+2.  **Strictly adhere to the JSON output format provided below.** Do not include any text before or after the JSON.
+3.  Do not mention model names, rules, thresholds, or API endpoints in your response.
+4.  For each classification, select a relevant quote from the article that supports your conclusion.
+5.  For each classification, provide an "llm_reason" and an "llm_confidence" score (0.0 - 1.0) from your own analysis.
+6.  If your analysis extremely disagrees with the models, explicitly state the reason for the discrepancy in the 'llm_reason' field.
+7.  Set "llm_positive" to "true" if your reason agrees with any of the models' top labels, and "false" if it disagrees.
+8.  "llm_reason" should be a concise reasoning, not a direct quote from the article. It should be used to justify models' scores.
+9.  Use the provided models' scores to inform your analysis and confidence levels. You can only disagree if you have an extremely strong reason.
+10. In "llm_reason", express models' confidence as a percentage (0% - 100%) and pair it with the corresponding label.
+11. Do not use first-person pronouns ('I', 'my', 'we', 'our') or refer to yourself except as 'CheckMatic'. Avoid phrases like 'in my opinion' or 'I think'.
+12. Do not add any Markdown formatting, asterisks (*), underscores (_), or other symbols for emphasis. Only quote text from the article directly.
+13. If Sarcasm score is above 0.5, the use it as your own confidence level for the primary classification.
+14. Do not mention the literal name of labels. For example, mention "LABEL_1" as "sarcasm" and "press_release" as "Press Release".
+15. The reason should be a concise, interpretive justification for the classification, not just a summary of the model's scores.
+
+### Article Text:
+${text}
+
+### Model Outputs:
+1.  **Credibility & Content Type Analysis**: ${JSON.stringify(zeroShot, null, 2)}
+2.  **Sarcasm Detection**: ${JSON.stringify(sarcasm.raw, null, 2)}
+3.  **Political Bias**: ${JSON.stringify(politicalBias, null, 2)}
+
+## Output Format:
+{
+  "summary": "[A single, neutral sentence summary]",
+  "primary_classification": {
+    "type": "[string... choose one: 'authentic', 'fake', or 'satirical']",
+    "quote": "[a quote from the article]",
+    "model_confidence": [float],
+    "llm_confidence": [float... 0.0-1.0],
+    "llm_reason": "[string]",
+    "llm_positive": [boolean]
+  },
+  "secondary_classification": {
+    "type": "[string... choose or create one: 'news report', 'opinion', 'satire', 'misleading', 'analysis', etc.]",
+    "quote": "[a quote from the article]",
+    "model_confidence": [float],
+    "llm_confidence": [float... 0.0-1.0],
+    "llm_reason": "[string]",
+    "llm_positive": [boolean]
+  },
+  "tertiary_classification": {
+    "type": "[string: 'left_leaning', 'right_leaning', or 'neutral']",
+    "quote": "[a quote from the article]",
+    "model_confidence": [float],
+    "llm_confidence": [float... 0.0-1.0],
+    "llm_reason": "[string]",
+    "llm_positive": [boolean]
+  }
+}
+`;
+
+    const result = await safeFetchWithRetry(LLM_ENDPOINT, {
+        headers: {
+            'x-goog-api-key': LLM_API_KEY,
+            'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+        }),
+    });
+
+    const responseText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!responseText) {
+        return { error: "Synthesis unavailable" };
+    }
+
     try {
-        console.log('Starting LLM synthesis...');
-
-        // More robust template replacement
-        let prompt = SYNTHESIS_PROMPT;
-
-        // Replace placeholders one by one with proper escaping
-        prompt = prompt.replace(/\\\$\{currentDate\}/g, currentDate);
-        prompt = prompt.replace(/\\\$\{text\}/g, text);
-        prompt = prompt.replace(/\\\$\{JSON\.stringify\(zeroShot, null, 2\)\}/g, JSON.stringify(zeroShot, null, 2));
-        prompt = prompt.replace(/\\\$\{JSON\.stringify\(sarcasm\.raw, null, 2\)\}/g, JSON.stringify(sarcasm.raw, null, 2));
-        prompt = prompt.replace(/\\\$\{JSON\.stringify\(politicalBias, null, 2\)\}/g, JSON.stringify(politicalBias, null, 2));
-
-        console.log('Prompt length after replacement:', prompt.length);
-
-        const result = await safeFetchWithRetry(LLM_ENDPOINT, {
-            headers: {
-                'x-goog-api-key': LLM_API_KEY,
-                'Content-Type': 'application/json',
-            },
-            method: 'POST',
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-            }),
-        });
-
-        const responseText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!responseText) {
-            console.error('No response text from LLM');
-            return { error: "Synthesis unavailable" };
-        }
-
-        try {
-            const jsonMatch = responseText.match(/```json\n([\s\S]*)\n```/);
-            const jsonString = jsonMatch ? jsonMatch[1] : responseText;
-            return JSON.parse(jsonString);
-        } catch (err) {
-            console.error(`[LLM JSON Parse Error] ${err.message}`);
-            console.error('Raw response:', responseText);
-            return { error: "Synthesis unavailable", rawResponse: responseText };
-        }
-    } catch (error) {
-        console.error('LLM Synthesis Error:', error);
-        return { error: "Synthesis failed", details: error.message };
+        const jsonMatch = responseText.match(/```json\n([\s\S]*)\n```/);
+        const jsonString = jsonMatch ? jsonMatch[1] : responseText;
+        return JSON.parse(jsonString);
+    } catch (err) {
+        console.error(`[LLM JSON Parse Error] ${err.message}`);
+        return { error: "Synthesis unavailable", rawResponse: responseText };
     }
 }
 
 // === Main Detection Function ===
 export async function detectContent(text, labelGroup) {
-    console.log('Starting detectContent with:', { textLength: text?.length, labelGroupLength: labelGroup?.length });
-
-    try {
-        // Input validation
-        if (typeof text !== 'string' || text.trim().length === 0) {
-            throw new Error("Invalid or missing 'text'.");
-        }
-        if (!Array.isArray(labelGroup) || labelGroup.length === 0) {
-            throw new Error("Invalid or missing 'labelGroup'.");
-        }
-
-        // Input sanitization
-        const sanitizedText = sanitizeText(text);
-
-        // Run all model detections in parallel
-        const [sarcasmResult, zeroShotResult, politicalBiasResult] = await Promise.allSettled([
-            detectSarcasm(sanitizedText),
-            classifyZeroShot(sanitizedText, labelGroup),
-            detectPoliticalBias(sanitizedText),
-        ]);
-
-        // Helper function to extract results
-        const getResultOrNull = (promiseResult) =>
-            promiseResult.status === 'fulfilled' ? promiseResult.value : null;
-
-        const finalSarcasm = getResultOrNull(sarcasmResult);
-        const finalZeroShot = getResultOrNull(zeroShotResult);
-        const finalPoliticalBias = getResultOrNull(politicalBiasResult);
-
-        console.log('Model results:', {
-            sarcasm: !!finalSarcasm,
-            zeroShot: !!finalZeroShot,
-            politicalBias: !!finalPoliticalBias
-        });
-
-        // Get current date
-        const currentDate = new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-
-        // Synthesize results
-        let finalLLMResult;
-        if (finalSarcasm && finalZeroShot && finalPoliticalBias) {
-            finalLLMResult = await synthesizeWithLLM(sanitizedText, finalZeroShot, finalSarcasm, finalPoliticalBias, currentDate);
-        } else {
-            finalLLMResult = {
-                error: "One or more detection models failed.",
-                details: {
-                    sarcasm: sarcasmResult.reason?.message,
-                    zeroShot: zeroShotResult.reason?.message,
-                    politicalBias: politicalBiasResult.reason?.message
-                }
-            };
-        }
-
-        // Return combined result
-        const finalResult = {
-            synthesis: finalLLMResult,
-            zeroShotAnalysis: finalZeroShot,
-            sarcasmAnalysis: finalSarcasm?.raw,
-            politicalBiasAnalysis: finalPoliticalBias,
-        };
-
-        console.log('Final result structure:', {
-            hasSynthesis: !!finalResult.synthesis,
-            hasZeroShot: !!finalResult.zeroShotAnalysis,
-            hasSarcasm: !!finalResult.sarcasmAnalysis,
-            hasPoliticalBias: !!finalResult.politicalBiasAnalysis
-        });
-
-        return finalResult;
-    } catch (error) {
-        console.error('detectContent error:', error);
-        throw error;
+    // Input validation
+    if (typeof text !== 'string' || text.trim().length === 0) {
+        throw new Error("Invalid or missing 'text'.");
     }
+    if (!Array.isArray(labelGroup) || labelGroup.length === 0) {
+        throw new Error("Invalid or missing 'labelGroup'.");
+    }
+
+    // Input sanitization
+    const sanitizedText = sanitizeText(text);
+
+    // Run all model detections in parallel
+    const [sarcasmResult, zeroShotResult, politicalBiasResult] = await Promise.allSettled([
+        detectSarcasm(sanitizedText),
+        classifyZeroShot(sanitizedText, labelGroup),
+        detectPoliticalBias(sanitizedText),
+    ]);
+
+    // Helper function to extract results
+    const getResultOrNull = (promiseResult) =>
+        promiseResult.status === 'fulfilled' ? promiseResult.value : null;
+
+    const finalSarcasm = getResultOrNull(sarcasmResult);
+    const finalZeroShot = getResultOrNull(zeroShotResult);
+    const finalPoliticalBias = getResultOrNull(politicalBiasResult);
+
+    // Get current date
+    const currentDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+
+    // Synthesize results
+    let finalLLMResult;
+    if (finalSarcasm && finalZeroShot && finalPoliticalBias) {
+        finalLLMResult = await synthesizeWithLLM(sanitizedText, finalZeroShot, finalSarcasm, finalPoliticalBias, currentDate);
+    } else {
+        finalLLMResult = {
+            error: "One or more detection models failed.",
+            details: {
+                sarcasm: sarcasmResult.reason?.message,
+                zeroShot: zeroShotResult.reason?.message,
+                politicalBias: politicalBiasResult.reason?.message
+            }
+        };
+    }
+
+    // Return combined result
+    const finalResult = {
+        synthesis: finalLLMResult,
+        zeroShotAnalysis: finalZeroShot,
+        sarcasmAnalysis: finalSarcasm?.raw,
+        politicalBiasAnalysis: finalPoliticalBias,
+    };
+
+    return finalResult;
 }
