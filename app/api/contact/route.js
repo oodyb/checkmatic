@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { JSDOM } from 'jsdom';
 import createDOMPurify from 'dompurify';
+import { Redis } from '@upstash/redis';
 
 // Initialize JSDOM and DOMPurify for server-side HTML sanitization
 const window = new JSDOM('').window;
@@ -10,30 +11,41 @@ const DOMPurify = createDOMPurify(window);
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// In-memory rate limiter to prevent abuse
-const rateLimit = new Map();
+// Initialize the Redis client with environment variables
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+// Rate limiting constants
 const MAX_REQUESTS_PER_HOUR = 5;
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const WINDOW_SECONDS = 60 * 60; // 1 hour
 
 export async function POST(request) {
-    const ip = request.headers.get('x-forwarded-for') || request.ip;
-
-    // Check rate limit
-    const now = Date.now();
-    if (rateLimit.has(ip)) {
-        const { count, lastReset } = rateLimit.get(ip);
-        if (now - lastReset > WINDOW_MS) {
-            rateLimit.set(ip, { count: 1, lastReset: now });
-        } else if (count >= MAX_REQUESTS_PER_HOUR) {
-            return NextResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 });
-        } else {
-            rateLimit.set(ip, { count: count + 1, lastReset });
-        }
-    } else {
-        rateLimit.set(ip, { count: 1, lastReset: now });
-    }
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(/, /)[0] : 'unknown';
 
     try {
+
+        // --- RATE LIMITING LOGIC (REDIS) ---
+        // Create a unique key for the user's IP
+        const key = `rate-limit:${ip}`;
+
+        // Get the current count for this key, or initialize to 0
+        const requestCount = await redis.incr(key);
+
+        // If this is the first request in the window, set the key to expire in one hour
+        if (requestCount === 1) {
+            await redis.expire(key, WINDOW_SECONDS);
+        }
+
+        // Check if the user has exceeded the request limit
+        if (requestCount > MAX_REQUESTS_PER_HOUR) {
+            return NextResponse.json(
+                { message: 'Too many requests. Please try again later.' },
+                { status: 429 }
+            );
+        }
         const { name, email, message } = await request.json();
 
         // Check for required fields

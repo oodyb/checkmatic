@@ -1,5 +1,7 @@
 // components/AnalysisResult.js
 import React, { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
+
 import {
   FaRegNewspaper,
   FaClipboardCheck,
@@ -47,6 +49,15 @@ export default function AnalysisResult({ analysis }) {
     tertiary_classification,
   } = analysis.synthesis;
 
+  // SANITIZE ALL LLM-GENERATED CONTENT
+  const sanitizedSummary = DOMPurify.sanitize(summary);
+  const sanitizedPrimaryQuote = DOMPurify.sanitize(primary_classification?.quote || '');
+  const sanitizedPrimaryReason = DOMPurify.sanitize(primary_classification?.llm_reason || '');
+  const sanitizedSecondaryQuote = DOMPurify.sanitize(secondary_classification?.quote || '');
+  const sanitizedSecondaryReason = DOMPurify.sanitize(secondary_classification?.llm_reason || '');
+  const sanitizedTertiaryQuote = DOMPurify.sanitize(tertiary_classification?.quote || '');
+  const sanitizedTertiaryReason = DOMPurify.sanitize(tertiary_classification?.llm_reason || '');
+
   const toggleSection = (section) =>
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
 
@@ -86,17 +97,17 @@ export default function AnalysisResult({ analysis }) {
 
 URL: ${currentUrl}
 
-Summary: "${summary}"
+Summary: "${sanitizedSummary}"
 
 Credibility: ${primary_classification?.type?.replace('_', ' ')}
-Quote: "${primary_classification?.quote}"
+Quote: "${sanitizedPrimaryQuote}"
 
 Type: ${secondary_classification?.type?.replace('_', ' ')}
-Quote: "${secondary_classification?.quote}"
+Quote: "${sanitizedSecondaryQuote}"
 
 ${tertiary_classification
         ? `Political Bias: ${tertiary_classification.type.replace('_', ' ')}
-Quote: "${tertiary_classification.quote}"`
+Quote: "${sanitizedTertiaryQuote}"`
         : ''
       }`;
 
@@ -117,17 +128,17 @@ Quote: "${tertiary_classification.quote}"`
 
   const getSectionText = (sectionKey) => {
     const textMap = {
-      summary: `Summary: "${summary}"`,
-      credibility: `Credibility: ${primary_classification?.type?.replace('_', ' ')}\nQuote: "${primary_classification?.quote}"`,
-      type: `Type: ${secondary_classification?.type?.replace('_', ' ')}\nQuote: "${secondary_classification?.quote}"`,
+      summary: `Summary: "${sanitizedSummary}"`,
+      credibility: `Credibility: ${primary_classification?.type?.replace('_', ' ')}\nQuote: "${sanitizedPrimaryQuote}"`,
+      type: `Type: ${secondary_classification?.type?.replace('_', ' ')}\nQuote: "${sanitizedSecondaryQuote}"`,
       bias: tertiary_classification
-        ? `Political Bias: ${tertiary_classification.type.replace('_', ' ')}\nQuote: "${tertiary_classification.quote}"`
+        ? `Political Bias: ${tertiary_classification.type.replace('_', ' ')}\nQuote: "${sanitizedTertiaryQuote}"`
         : '',
     };
     return textMap[sectionKey] || '';
   };
 
-  const renderConfidence = (modelConfidence, llmConfidence, llmReason, llmPositive) => {
+  const renderConfidence = (llmConfidence, llmReason, llmPositive) => {
     const hasLLM = llmConfidence != null;
     const hasReason = !!llmReason;
 
@@ -162,7 +173,10 @@ Quote: "${tertiary_classification.quote}"`
                 : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
                 }`}
             >
-              <p className="leading-relaxed">{llmReason}</p>
+              <p
+                className="leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: llmReason }}
+              />
             </div>
           </div>
         )}
@@ -315,9 +329,10 @@ Quote: "${tertiary_classification.quote}"`
           {renderSection(
             'Summary',
             <FaListAlt className="h-5 w-5 text-blue-600" />,
-            <p className="text-lg text-gray-700 dark:text-gray-300 italic leading-relaxed">
-              &quot;{summary}&quot;
-            </p>,
+            <p
+              className="text-lg text-gray-700 dark:text-gray-300 italic leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: `"${sanitizedSummary}"` }}
+            />,
             'summary'
           )}
 
@@ -331,15 +346,15 @@ Quote: "${tertiary_classification.quote}"`
               </p>
 
               {renderConfidence(
-                primary_classification?.model_confidence ?? null,
                 primary_classification?.llm_confidence ?? null,
-                primary_classification?.llm_reason ?? '',
+                sanitizedPrimaryReason,
                 primary_classification?.llm_positive ?? false
               )}
 
-              <blockquote className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/30 border-l-4 border-indigo-500 rounded-r-xl italic text-gray-600 dark:text-gray-400 leading-relaxed">
-                &quot;{primary_classification?.quote}&quot;
-              </blockquote>
+              <blockquote
+                className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/30 border-l-4 border-indigo-500 rounded-r-xl italic text-gray-600 dark:text-gray-400 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: `&quot;${sanitizedPrimaryQuote}&quot;` }}
+              />
             </div>,
             'credibility'
           )}
@@ -354,15 +369,15 @@ Quote: "${tertiary_classification.quote}"`
               </p>
 
               {renderConfidence(
-                secondary_classification?.model_confidence ?? null,
                 secondary_classification?.llm_confidence ?? null,
-                secondary_classification?.llm_reason ?? '',
+                sanitizedSecondaryReason,
                 secondary_classification?.llm_positive ?? false
               )}
 
-              <blockquote className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/30 border-l-4 border-purple-500 rounded-r-xl italic text-gray-600 dark:text-gray-400 leading-relaxed">
-                &quot;{secondary_classification?.quote}&quot;
-              </blockquote>
+              <blockquote
+                className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/30 border-l-4 border-purple-500 rounded-r-xl italic text-gray-600 dark:text-gray-400 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: `&quot;${sanitizedSecondaryQuote}&quot;` }}
+              />
             </div>,
             'type'
           )}
@@ -382,15 +397,15 @@ Quote: "${tertiary_classification.quote}"`
                 </p>
 
                 {renderConfidence(
-                  tertiary_classification?.model_confidence ?? null,
                   tertiary_classification?.llm_confidence ?? null,
-                  tertiary_classification?.llm_reason ?? '',
+                  sanitizedTertiaryReason,
                   tertiary_classification?.llm_positive ?? false
                 )}
 
-                <blockquote className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/30 border-l-4 border-indigo-500 rounded-r-xl italic text-gray-600 dark:text-gray-400 leading-relaxed">
-                  &quot;{tertiary_classification.quote}&quot;
-                </blockquote>
+                <blockquote
+                  className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/30 border-l-4 border-indigo-500 rounded-r-xl italic text-gray-600 dark:text-gray-400 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: `&quot;${sanitizedTertiaryQuote}&quot;` }}
+                />
               </div>,
               'bias'
             )}

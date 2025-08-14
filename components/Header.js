@@ -9,7 +9,8 @@ import {
     HiOutlineMail,
     HiMenu,
     HiX,
-} from "react-icons/hi";
+}
+    from "react-icons/hi";
 import { useState } from "react";
 
 const links = [
@@ -47,8 +48,6 @@ export default function Header() {
         <>
             <header className="fixed top-0 left-0 w-full bg-opacity-90 dark:bg-opacity-90 z-50">
                 <div className="max-w-7xl mx-auto flex items-center justify-center px-6 py-4">
-                    <div className="hidden md:block"></div>
-
                     <nav className="hidden md:flex space-x-2 text-gray-700 dark:text-gray-300 font-medium items-center backdrop-blur-xs rounded-xs">
                         {links.map((link) => (
                             <Link

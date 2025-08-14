@@ -112,10 +112,15 @@ function validateURL(url) {
         throw new Error('URL is required and must be a string');
     }
 
-    const trimmedUrl = url.trim();
+    let trimmedUrl = url.trim();
 
     if (!trimmedUrl) {
         throw new Error('URL cannot be empty');
+    }
+
+    // Check if the URL has a protocol, and if not, prepend 'https://'
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+        trimmedUrl = `https://${trimmedUrl}`;
     }
 
     // Format and protocol checks
@@ -335,11 +340,12 @@ async function detectTextFromImage(imageData) {
                 },],
             },],
         };
-        const urlWithKey = `${LLM_ENDPOINT}?key=${GEMINI_API_KEY}`;
-        const result = await safeFetchWithRetry(urlWithKey, {
+
+        const result = await safeFetchWithRetry(LLM_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'x-goog-api-key': GEMINI_API_KEY,
             },
             body: JSON.stringify(body),
         });

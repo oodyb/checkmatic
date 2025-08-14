@@ -108,17 +108,34 @@ export default function SearchBar({ setAnalysisData }) {
     };
 
     const handleSubmit = async () => {
-        const currentQuery = getCurrentQuery();
+        let currentQuery = getCurrentQuery();
 
         // Client-side validation
-        if (mode === "link" && !isValidUrl(currentQuery)) {
-            setModalData({
-                show: true,
-                status: "error",
-                title: "Invalid URL",
-                message: "Please enter a valid URL.",
-            });
-            return;
+        if (mode === "link") {
+            if (!currentQuery) {
+                setModalData({
+                    show: true,
+                    status: "error",
+                    title: "Invalid URL",
+                    message: "Please enter a URL.",
+                });
+                return;
+            }
+
+            // Prepend https:// if no protocol is found
+            if (!currentQuery.startsWith('http://') && !currentQuery.startsWith('https://')) {
+                currentQuery = `https://${currentQuery}`;
+            }
+
+            if (!isValidUrl(currentQuery)) {
+                setModalData({
+                    show: true,
+                    status: "error",
+                    title: "Invalid URL",
+                    message: "Please enter a valid URL.",
+                });
+                return;
+            }
         }
 
         abortControllerRef.current = new AbortController();
@@ -181,7 +198,6 @@ export default function SearchBar({ setAnalysisData }) {
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('Analysis was stopped by user');
                 return;
             }
 

@@ -1,8 +1,8 @@
 // app/api/detection/detection-logic.js
-
 // === Environment Variables ===
 const HF_ACCESS_TOKEN = process.env.HF_ACCESS_TOKEN;
 const LLM_API_KEY = process.env.LLM_API_KEY;
+const LLM_PROMPT = process.env.LLM_PROMPT;
 
 if (!HF_ACCESS_TOKEN || !LLM_API_KEY) {
     throw new Error("Missing HF_ACCESS_TOKEN or LLM_API_KEY in environment variables.");
@@ -109,64 +109,12 @@ async function detectPoliticalBias(text) {
 }
 
 async function synthesizeWithLLM(text, zeroShot, sarcasm, politicalBias, currentDate) {
-    const prompt = `
-You are "CheckMatic," a news analyst.
-Your task is to analyze the provided article text and model outputs to produce a comprehensive, structured analysis.
-
-## Instructions:
-1.  **The current date is: ${currentDate}**
-2.  **Strictly adhere to the JSON output format provided below.** Do not include any text before or after the JSON.
-3.  Do not mention model names, rules, thresholds, or API endpoints in your response.
-4.  For each classification, select a relevant quote from the article that supports your conclusion.
-5.  For each classification, provide an "llm_reason" and an "llm_confidence" score (0.0 - 1.0) from your own analysis.
-6.  If your analysis extremely disagrees with the models, explicitly state the reason for the discrepancy in the 'llm_reason' field.
-7.  Set "llm_positive" to "true" if your reason agrees with any of the models' top labels, and "false" if it disagrees.
-8.  "llm_reason" should be a concise reasoning, not a direct quote from the article. It should be used to justify models' scores.
-9.  Use the provided models' scores to inform your analysis and confidence levels. You can only disagree if you have an extremely strong reason.
-10. In "llm_reason", express models' confidence as a percentage (0% - 100%) and pair it with the corresponding label.
-11. Do not use first-person pronouns ('I', 'my', 'we', 'our') or refer to yourself except as 'CheckMatic'. Avoid phrases like 'in my opinion' or 'I think'.
-12. Do not add any Markdown formatting, asterisks (*), underscores (_), or other symbols for emphasis. Only quote text from the article directly.
-13. If Sarcasm score is above 0.5, the use it as your own confidence level for the primary classification.
-14. Do not mention the literal name of labels. For example, mention "LABEL_1" as "sarcasm".
-15. The reason should be a concise, interpretive justification for the classification, not just a summary of the model's scores.
-
-### Article Text:
-${text}
-
-### Model Outputs:
-1.  **Credibility & Content Type Analysis**: ${JSON.stringify(zeroShot, null, 2)}
-2.  **Sarcasm Detection**: ${JSON.stringify(sarcasm.raw, null, 2)}
-3.  **Political Bias**: ${JSON.stringify(politicalBias, null, 2)}
-
-## Output Format:
-{
-  "summary": "[A single, neutral sentence summary]",
-  "primary_classification": {
-    "type": "[string... choose one: 'authentic', 'fake', or 'satirical']",
-    "quote": "[a quote from the article]",
-    "model_confidence": [float],
-    "llm_confidence": [float... 0.0-1.0],
-    "llm_reason": "[string]",
-    "llm_positive": [boolean]
-  },
-  "secondary_classification": {
-    "type": "[string... choose or create one: 'news report', 'opinion', 'satire', 'misleading', 'analysis', etc.]",
-    "quote": "[a quote from the article]",
-    "model_confidence": [float],
-    "llm_confidence": [float... 0.0-1.0],
-    "llm_reason": "[string]",
-    "llm_positive": [boolean]
-  },
-  "tertiary_classification": {
-    "type": "[string: 'left_leaning', 'right_leaning', or 'neutral']",
-    "quote": "[a quote from the article]",
-    "model_confidence": [float],
-    "llm_confidence": [float... 0.0-1.0],
-    "llm_reason": "[string]",
-    "llm_positive": [boolean]
-  }
-}
-`;
+    const prompt = LLM_PROMPT
+        .replace('${currentDate}', currentDate)
+        .replace('${text}', text)
+        .replace('${JSON.stringify(zeroShot, null, 2)}', JSON.stringify(zeroShot, null, 2))
+        .replace('${JSON.stringify(sarcasm.raw, null, 2)}', JSON.stringify(sarcasm.raw, null, 2))
+        .replace('${JSON.stringify(politicalBias, null, 2)}', JSON.stringify(politicalBias, null, 2));
 
     const result = await safeFetchWithRetry(LLM_ENDPOINT, {
         headers: {
@@ -197,8 +145,6 @@ ${text}
 
 // === Main Detection Function ===
 export async function detectContent(text, labelGroup) {
-    console.log("=== Starting Content Detection ===");
-
     // Input validation
     if (typeof text !== 'string' || text.trim().length === 0) {
         throw new Error("Invalid or missing 'text'.");
@@ -209,9 +155,6 @@ export async function detectContent(text, labelGroup) {
 
     // Input sanitization
     const sanitizedText = sanitizeText(text);
-
-    console.log(`[Request] Text (first 80 chars): "${sanitizedText.slice(0, 80)}..."`);
-    console.log(`[Request] Labels: ${labelGroup.join(', ')}`);
 
     // Run all model detections in parallel
     const [sarcasmResult, zeroShotResult, politicalBiasResult] = await Promise.allSettled([
@@ -242,7 +185,7 @@ export async function detectContent(text, labelGroup) {
         finalLLMResult = await synthesizeWithLLM(sanitizedText, finalZeroShot, finalSarcasm, finalPoliticalBias, currentDate);
     } else {
         finalLLMResult = {
-            error: "One or more detection models failed.", 
+            error: "One or more detection models failed.",
             details: {
                 sarcasm: sarcasmResult.reason?.message,
                 zeroShot: zeroShotResult.reason?.message,
@@ -259,6 +202,5 @@ export async function detectContent(text, labelGroup) {
         politicalBiasAnalysis: finalPoliticalBias,
     };
 
-    console.log("=== Detection Complete ===");
     return finalResult;
 }
