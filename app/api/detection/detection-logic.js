@@ -2,10 +2,10 @@
 // === Environment Variables ===
 const HF_ACCESS_TOKEN = process.env.HF_ACCESS_TOKEN;
 const LLM_API_KEY = process.env.LLM_API_KEY;
-const LLM_PROMPT = process.env.LLM_PROMPT;
+const SYNTHESIS_PROMPT = process.env.SYNTHESIS_PROMPT;
 
-if (!HF_ACCESS_TOKEN || !LLM_API_KEY) {
-    throw new Error("Missing HF_ACCESS_TOKEN or LLM_API_KEY in environment variables.");
+if (!HF_ACCESS_TOKEN || !LLM_API_KEY || !SYNTHESIS_PROMPT) {
+    throw new Error("Missing required environment variables: HF_ACCESS_TOKEN, LLM_API_KEY, or SYNTHESIS_PROMPT");
 }
 
 // === Model Configuration ===
@@ -109,7 +109,8 @@ async function detectPoliticalBias(text) {
 }
 
 async function synthesizeWithLLM(text, zeroShot, sarcasm, politicalBias, currentDate) {
-    const prompt = LLM_PROMPT
+    // Prompt from environment variable with template substitution
+    const prompt = SYNTHESIS_PROMPT
         .replace('${currentDate}', currentDate)
         .replace('${text}', text)
         .replace('${JSON.stringify(zeroShot, null, 2)}', JSON.stringify(zeroShot, null, 2))
