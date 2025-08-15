@@ -5,6 +5,10 @@
   --font-sans: var(--font-poppins), sans-serif;
 }
 
+button {
+  cursor: pointer;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     background-color: #ffffff;

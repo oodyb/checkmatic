@@ -8,11 +8,11 @@ export const metadata = {
 
 export default function About() {
     return (
-        <div className="pt-20 md:pt-24 min-h-screen bg-white dark:bg-gray-900">
+        <div className="pt-12 min-h-screen bg-white dark:bg-gray-900">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="py-8 sm:py-12">
+                <div>
                     {/* Header Section */}
-                    <div className="text-center mb-8 sm:mb-12">
+                    <div className="text-center mb-4 sm:mb-8">
                         <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-4">
                             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">
                                 About

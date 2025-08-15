@@ -8,7 +8,7 @@ import Footer from "../components/Footer";
 export default function ClientLayoutWrapper({ children }) {
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden">
+        <div>
             <Header />
             <div className="flex-1 overflow-y-auto pt-20">
                 {children}

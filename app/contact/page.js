@@ -44,11 +44,11 @@ export default function Contact() {
     };
 
     return (
-        <div className="pt-20 md:pt-24 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="pt-8 min-h-screen bg-white dark:bg-gray-900">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="py-8 sm:py-12">
+                <div className="py-4 sm:py-4">
                     {/* Header Section */}
-                    <div className="text-center mb-8 sm:mb-12">
+                    <div className="text-center mb-6 sm:mb-10">
                         <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-4">
                             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">
                                 Contact Us
@@ -62,7 +62,7 @@ export default function Contact() {
 
                     {/* Contact Form Card */}
                     <div className="max-w-2xl mx-auto">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                             <div className="p-6 sm:p-8 lg:p-10">
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     {/* Name Field */}
@@ -79,7 +79,7 @@ export default function Contact() {
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
                                                 className="w-full px-4 py-3 sm:py-4 text-sm sm:text-base bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                                                placeholder="Your full name"
+                                                placeholder="Your name"
                                                 required
                                             />
                                         </div>

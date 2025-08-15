@@ -25,7 +25,7 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <div className="flex items-center space-x-2 md:mt-6">
+      <div className="flex items-center space-x-2 mt-6">
         <HiCheckCircle className="w-12 h-12 mb-6 text-indigo-600 dark:text-indigo-400" />
         <h1 className="text-4xl font-extrabold mb-6 text-indigo-600 dark:text-indigo-400">CheckMatic</h1>
       </div>
