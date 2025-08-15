@@ -7,11 +7,7 @@ import {
     HiOutlineHome,
     HiOutlineInformationCircle,
     HiOutlineMail,
-    HiMenu,
-    HiX,
-}
-    from "react-icons/hi";
-import { useState } from "react";
+} from "react-icons/hi";
 
 const links = [
     { href: "/", label: "Home", icon: HiOutlineHome },
@@ -31,83 +27,29 @@ const links = [
     },
 ];
 
-const desktopLinkStyles =
-    "p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center space-x-1 transition-all duration-300 ease-in-out hover:shadow-md";
-
-const mobileLinkStyles =
-    "flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600";
+const linkStyles =
+    "p-2 md:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 flex flex-col md:flex-row items-center md:space-x-2 transition-all duration-300 ease-in-out hover:shadow-md group";
 
 export default function Header() {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
-
     return (
-        <>
-            <header className="fixed top-0 left-0 w-full bg-opacity-90 dark:bg-opacity-90 z-50">
-                <div className="max-w-7xl mx-auto flex items-center justify-center px-6 py-4">
-                    <nav className="hidden md:flex space-x-2 text-gray-700 dark:text-gray-300 font-medium items-center backdrop-blur-xs rounded-xs">
-                        {links.map((link) => (
-                            <Link
-                                key={link.label}
-                                href={link.href}
-                                className={desktopLinkStyles}
-                                {...(link.external && { target: "_blank", rel: "noopener noreferrer" })}
-                            >
-                                <link.icon className="w-6 h-6" />
-                                <span>{link.label}</span>
-                            </Link>
-                        ))}
-                    </nav>
-
-                    <button
-                        aria-label="Toggle menu"
-                        className="md:hidden ml-auto text-indigo-600 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none cursor-pointer"
-                        onClick={toggleMenu}
-                    >
-                        <HiMenu className="w-8 h-8 text-indigo-600 hover:text-indigo-400 backdrop-blur-xs rounded-xs" />
-                    </button>
-                </div>
-            </header>
-
-            {isMenuOpen && (
-                <div
-                    className="fixed inset-0 backdrop-blur-sm z-40 md:hidden"
-                    onClick={toggleMenu}
-                />
-            )}
-
-            <div
-                className={`fixed top-0 right-0 h-full w-64 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${isMenuOpen ? "translate-x-0" : "translate-x-full"
-                    }`}
-            >
-                <div className="flex justify-end p-4">
-                    <button
-                        aria-label="Close menu"
-                        onClick={toggleMenu}
-                        className="text-indigo-600 hover:text-indigo-400 focus:outline-none cursor-pointer"
-                    >
-                        <HiX className="w-8 h-8" />
-                    </button>
-                </div>
-
-                <nav className="flex flex-col space-y-4 px-6 pb-6 font-medium">
+        <header className="fixed top-0 left-0 w-full z-50 bg-white dark:bg-gray-900 bg-opacity-90 dark:bg-opacity-90 backdrop-blur-sm dark:border-gray-700">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
+                <nav className="flex justify-center space-x-1 md:space-x-2 text-gray-700 dark:text-gray-300 font-medium">
                     {links.map((link) => (
                         <Link
                             key={link.label}
                             href={link.href}
-                            onClick={toggleMenu}
-                            className={mobileLinkStyles}
+                            className={linkStyles}
                             {...(link.external && { target: "_blank", rel: "noopener noreferrer" })}
                         >
-                            <link.icon className="w-6 h-6" />
-                            <span>{link.label}</span>
+                            <link.icon className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-0" />
+                            <span className="text-xs md:text-base leading-tight text-center md:text-left">
+                                {link.label}
+                            </span>
                         </Link>
                     ))}
                 </nav>
             </div>
-        </>
+        </header>
     );
 }
