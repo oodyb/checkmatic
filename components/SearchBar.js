@@ -20,6 +20,47 @@ const isValidUrl = (string) => {
 
 const MAX_FILE_SIZE_MB = 10;
 
+const resizeImage = (file, maxWidth, maxHeight, quality = 0.8) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new window.Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                // Determine new dimensions
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Get the image blob with reduced quality
+                canvas.toBlob(blob => {
+                    resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+};
+
 export default function SearchBar({ setAnalysisData }) {
     // Initialize with default values - no sessionStorage check during initialization
     const [mode, setMode] = useState("link");
@@ -180,16 +221,22 @@ export default function SearchBar({ setAnalysisData }) {
             } else if (mode === "text") {
                 requestData.content = currentQuery;
             } else if (mode === "photo" && file) {
+                console.log("Original file size:", (file.size / 1024 / 1024).toFixed(2), "MB");
+                // Resize the image to a max of 1024x1024 with 80% quality
+                const resizedFile = await resizeImage(file, 1024, 1024);
+                console.log("Resized file size:", (resizedFile.size / 1024 / 1024).toFixed(2), "MB");
+
+
                 const base64 = await new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
+                    reader.readAsDataURL(resizedFile); // Use the resized file
                 });
                 requestData.photo = {
                     data: base64,
-                    name: file.name,
-                    size: file.size,
-                    type: file.type
+                    name: resizedFile.name,
+                    size: resizedFile.size,
+                    type: resizedFile.type
                 };
             }
 
@@ -349,7 +396,7 @@ export default function SearchBar({ setAnalysisData }) {
                                 onFocus={() => setFocused(true)}
                                 onBlur={() => setFocused(false)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Paste your URL here..."
+                                placeholder="Paste news article URL here..."
                                 className="flex-1 bg-transparent placeholder-gray-500 dark:placeholder-gray-400 outline-none px-2 sm:px-4 text-sm sm:text-lg text-gray-900 dark:text-gray-100 transition-all duration-300"
                                 disabled={isLoading}
                             />
@@ -433,8 +480,11 @@ export default function SearchBar({ setAnalysisData }) {
                                     <h3 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
                                         {dragOver ? "Drop it here!" : "Upload your image"}
                                     </h3>
-                                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                                        Drag & drop or click to browse (Max {MAX_FILE_SIZE_MB}MB)
+                                    <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
+                                        Drag & drop or click to browse (Max {MAX_FILE_SIZE_MB}MB).
+                                    </p>
+                                     <p className="text-[11px] sm:text-base text-gray-600 dark:text-gray-400">
+                                        Ensure image contains text.
                                     </p>
                                 </div>
                             ) : (
@@ -447,7 +497,7 @@ export default function SearchBar({ setAnalysisData }) {
                                                     e.stopPropagation();
                                                     setFile(null);
                                                 }}
-                                                className="absolute -top-2 -right-2 p-2 rounded-xl bg-red-500 text-white hover:bg-red-600 shadow-lg transition-all duration-300"
+                                                className="absolute -top-2 -right-2 p-2 z-10 rounded-xl bg-red-500 text-white hover:bg-red-600 shadow-lg transition-all duration-300"
                                                 aria-label="Remove image"
                                             >
                                                 <X className="h-5 w-5" />

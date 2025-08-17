@@ -7,6 +7,15 @@ import createDOMPurify from 'dompurify';
 import * as cheerio from 'cheerio';
 import { detectContent } from '../detection/detection-logic.js';
 
+// Increase server side limit to 10mb
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '10mb',
+        },
+    },
+};
+
 // Initialize DOMPurify for robust HTML sanitization
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
@@ -331,7 +340,7 @@ async function detectTextFromImage(imageData) {
         const body = {
             contents: [{
                 parts: [{
-                    text: 'Transcribe the text in this image. Do not add any other text. Reply with the text from the image only.',
+                    text: 'Transcribe the text in this image. only reply with text in image. If no text is found, reply with the exact phrase "NO_TEXT_FOUND".',
                 }, {
                     inlineData: {
                         mimeType: 'image/jpeg',
@@ -354,7 +363,12 @@ async function detectTextFromImage(imageData) {
             throw new Error('Invalid response from the Gemini API.');
         }
 
-        return result.candidates[0].content.parts[0].text;
+        const transcribedText = result.candidates[0].content.parts[0].text;
+        if (transcribedText.trim() === 'NO_TEXT_FOUND') {
+            return '';
+        }
+
+        return transcribedText;
     } catch (error) {
         console.error(`[Gemini Pro Vision Error] ${error.message}`);
         throw new Error("Failed to extract text from image.");
@@ -417,15 +431,15 @@ async function handlePhotoMode(photo) {
 
     validatePhoto(photo);
     const extractedText = await detectTextFromImage(photo.data);
+    const sanitizedContent = sanitizeText(extractedText, true);
 
-    if (!extractedText) {
+
+    if (!sanitizedContent || sanitizedContent.length < 3) {
         return createErrorResponse(
-            'Could not extract text from the provided photo. Please ensure the image contains clear, readable text.',
+            'No discernible text was found in the provided image.',
             400
         );
     }
-    const sanitizedContent = sanitizeText(extractedText, true);
-
     const combinedResults = await callDetectionAPI(sanitizedContent);
     return NextResponse.json(combinedResults, { status: 200 });
 }
