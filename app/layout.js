@@ -11,7 +11,13 @@ const poppins = Poppins({
 
 export const metadata = {
   title: 'CheckMatic',
-  description: 'AI-powered fake news checker',
+  description: 'AI-powered News Analysis Platform',
+  openGraph: {
+    title: 'CheckMatic',
+    description: 'Instantly analyze articles, texts, and images for authenticity, bias, and more!',
+    url: 'https://www.checkmatic.vercel.app/',
+    images: 'https://www.checkmatic.vercel.app/preview-dark.png',
+  },
 };
 
 export default function RootLayout({ children }) {
